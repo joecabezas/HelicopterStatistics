@@ -13,6 +13,8 @@ using Oxide.Core.Plugins;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
+using System.Reflection;
+
 namespace Oxide.Plugins
 {
     [Info("Helicopter Statistics", "k014", 0.2)]
@@ -20,7 +22,7 @@ namespace Oxide.Plugins
 
     class HelicopterStatistics : RustPlugin
     {
-        private static float TIME_TO_HIDE_UI_AFTER_HELICOPTER_KILLED = 5f;
+        private static float TIME_TO_HIDE_UI_AFTER_HELICOPTER_KILLED = 20f;
 
         private BaseHelicopter helicopter;
         private HelicopterHpValues helicopterHpValues;
@@ -53,6 +55,7 @@ namespace Oxide.Plugins
 
             helicopter = (BaseHelicopter)entity;
             helicopterHpValues = new HelicopterHpValues(helicopter);
+            PreventHelicopterToFireRockets();
 
             ResetVariables();
             InitUIForAllPlayers();
@@ -61,6 +64,14 @@ namespace Oxide.Plugins
         private void ResetVariables()
         {
             playersStats.Clear();
+        }
+
+        private void PreventHelicopterToFireRockets()
+        {
+            FieldInfo maxRockets = typeof(PatrolHelicopterAI).GetField("maxRockets", BindingFlags.NonPublic | BindingFlags.Instance);
+            var heliAI = helicopter.GetComponent<PatrolHelicopterAI>() ?? null;
+            maxRockets.SetValue(heliAI, 0);
+            helicopter.SendNetworkUpdateImmediate(true);
         }
 
         void OnEntityDeath(BaseCombatEntity entity, HitInfo info)
@@ -157,12 +168,6 @@ namespace Oxide.Plugins
             return victim.GetType() == typeof(BaseHelicopter);
         }
 
-        [ChatCommand("killhelis")]
-        void TestCommand(BasePlayer player, string command, string[] args)
-        {
-            KillHelis();
-        }
-
         [ConsoleCommand("hs.killhelis")]
         void ccmdHsKillHelis(ConsoleSystem.Arg arg)
         {
@@ -189,6 +194,39 @@ namespace Oxide.Plugins
                 PrintToChat("No helicopters found :)");
             }
         }
+
+        #region Commands
+
+        [ConsoleCommand("qqq")]
+        void TestConsoleCommand(ConsoleSystem.Arg arg)
+        {
+            List<BasePlayer> players = BasePlayer.activePlayerList;
+            foreach (var player in players)
+            {
+                if (player == null) continue;
+                mainUIPanel.Draw(player);
+            }
+        }
+
+        [ConsoleCommand("www")]
+        void TestConsoleCommand2(ConsoleSystem.Arg arg)
+        {
+            helicopterEventTimer.Destroy();
+        }
+
+        private UInt32 GetSecondsFromTimeStamp(UInt32 timeStamp)
+        {
+            return timeStamp % 60;
+        }
+
+        private UInt32 GetMinutesFromTimeStamp(UInt32 timeStamp)
+        {
+            return timeStamp / 60;
+        }
+
+        #endregion
+
+        #region UI Updaters
 
         void InitUIForAllPlayers()
         {
@@ -242,7 +280,7 @@ namespace Oxide.Plugins
         private void UpdateTimerForAllUsers()
         {
             if (helicopterEventTimer != null) return;
-            
+
             helicopterEventSeconds = 0;
 
             Action startTimerAction = () => {
@@ -257,7 +295,7 @@ namespace Oxide.Plugins
                         timerStartedPanel.active = false;
                         timerStartedPanel.DestroyUI(player);
                     });
-                    
+
                     string timerText = string.Format(
                         "{0:00}:{1:00}",
                         GetMinutesFromTimeStamp((uint)this.helicopterEventSeconds),
@@ -273,89 +311,6 @@ namespace Oxide.Plugins
                 startTimerAction();
             });
         }
-
-        private class HelicopterHpValues
-        {
-            BaseHelicopter helicopter;
-
-            public float mainHp { get; set; }
-            public float mainHpMax { get; set; }
-            public float mainRotorHp { get; set; }
-            public float mainRotorHpMax { get; set; }
-            public float tailRotorHp { get; set; }
-            public float tailRotorHpMax { get; set; }
-
-
-            public HelicopterHpValues(BaseHelicopter helicopter)
-            {
-                this.helicopter = helicopter;
-            }
-
-            public void UpdateValues()
-            {
-                foreach (var weakspot in helicopter.weakspots)
-                {
-                    mainHp = helicopter.Health();
-                    mainHpMax = helicopter.MaxHealth();
-
-                    //tail rotor has only 1 bone
-                    if (weakspot.bonenames.Length == 1)
-                    {
-                        tailRotorHp = weakspot.health;
-                        tailRotorHpMax = weakspot.maxHealth;
-                    }
-                    //main rotor has 2 bones (engine and rotor)
-                    else
-                    {
-                        mainRotorHp = weakspot.health;
-                        mainRotorHpMax = weakspot.maxHealth;
-                    }
-                }
-            }
-        }
-
-        [ConsoleCommand("qqq")]
-        void TestConsoleCommand(ConsoleSystem.Arg arg)
-        {
-            List<BasePlayer> players = BasePlayer.activePlayerList;
-            foreach (var player in players)
-            {
-                if (player == null) continue;
-                mainUIPanel.Draw(player);
-            }
-        }
-
-        [ConsoleCommand("www")]
-        void TestConsoleCommand2(ConsoleSystem.Arg arg)
-        {
-            helicopterEventTimer.Destroy();
-        }
-
-        private UInt32 GetSecondsFromTimeStamp(UInt32 timeStamp)
-        {
-            return timeStamp % 60;
-        }
-
-        private UInt32 GetMinutesFromTimeStamp(UInt32 timeStamp)
-        {
-            return timeStamp / 60;
-        }
-
-        UIPanel hpBarHelicopter;
-        UIPanel hpBarMainRotor;
-        UIPanel hpBarTailRotor;
-        UIPanelText hpBarHelicopterLabel;
-        UIPanelText hpBarMainRotorLabel;
-        UIPanelText hpBarTailRotorLabel;
-
-        UIPanelText rifleBulletsLabel;
-        UIPanelText pistolBulletsLabel;
-        UIPanelText medsLabel;
-        UIPanelText timeLabel;
-
-        UIPanel timerStartedPanel;
-
-        float hpBarForegroundHeight = 0.95f;
 
         private void UpdateHpHelicopter(BasePlayer player, float health, float maxHealth)
         {
@@ -408,12 +363,25 @@ namespace Oxide.Plugins
             timeLabel.Draw(player);
         }
 
-        private class PlayerHelicopterStats
-        {
-            public int rifleAmmoUsed { get; set; } = 0;
-            public int pistolAmmoUsed { get; set; } = 0;
-            public int syringesUsed { get; set; } = 0;
-        }
+        #endregion
+
+        #region UI
+
+        UIPanel hpBarHelicopter;
+        UIPanel hpBarMainRotor;
+        UIPanel hpBarTailRotor;
+        UIPanelText hpBarHelicopterLabel;
+        UIPanelText hpBarMainRotorLabel;
+        UIPanelText hpBarTailRotorLabel;
+
+        UIPanelText rifleBulletsLabel;
+        UIPanelText pistolBulletsLabel;
+        UIPanelText medsLabel;
+        UIPanelText timeLabel;
+
+        UIPanel timerStartedPanel;
+
+        float hpBarForegroundHeight = 0.95f;
 
         private void CreateUI()
         {
@@ -815,14 +783,18 @@ namespace Oxide.Plugins
             timerStartedPanel = mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.eventStartedPanel");
         }
 
+        #endregion
+
+        #region Classes
+
         [JsonObject(MemberSerialization.OptIn)]
-        public class UIPanel
+        private class UIPanel
         {
             [JsonProperty("name")]
             public string name { get; private set; }
 
             [JsonProperty("parent")]
-            private string parentName { get; set; } = "Overlay";
+            private string parentName { get; set; } = "Hud";
 
             [JsonProperty("components")]
             private List<ICuiComponent> components = new List<ICuiComponent>();
@@ -984,7 +956,7 @@ namespace Oxide.Plugins
             #endregion
         }
 
-        public class UIPanelText : UIPanel
+        private class UIPanelText : UIPanel
         {
             public string text
             {
@@ -1040,7 +1012,7 @@ namespace Oxide.Plugins
             }
         }
 
-        public class UIPanelRawImage : UIPanel
+        private class UIPanelRawImage : UIPanel
         {
             public string url
             {
@@ -1071,6 +1043,55 @@ namespace Oxide.Plugins
                 rawImageComponent = new CuiRawImageComponent();
             }
         }
+
+        private class PlayerHelicopterStats
+        {
+            public int rifleAmmoUsed { get; set; } = 0;
+            public int pistolAmmoUsed { get; set; } = 0;
+            public int syringesUsed { get; set; } = 0;
+        }
+
+        private class HelicopterHpValues
+        {
+            BaseHelicopter helicopter;
+
+            public float mainHp { get; set; }
+            public float mainHpMax { get; set; }
+            public float mainRotorHp { get; set; }
+            public float mainRotorHpMax { get; set; }
+            public float tailRotorHp { get; set; }
+            public float tailRotorHpMax { get; set; }
+
+
+            public HelicopterHpValues(BaseHelicopter helicopter)
+            {
+                this.helicopter = helicopter;
+            }
+
+            public void UpdateValues()
+            {
+                foreach (var weakspot in helicopter.weakspots)
+                {
+                    mainHp = helicopter.Health();
+                    mainHpMax = helicopter.MaxHealth();
+
+                    //tail rotor has only 1 bone
+                    if (weakspot.bonenames.Length == 1)
+                    {
+                        tailRotorHp = weakspot.health;
+                        tailRotorHpMax = weakspot.maxHealth;
+                    }
+                    //main rotor has 2 bones (engine and rotor)
+                    else
+                    {
+                        mainRotorHp = weakspot.health;
+                        mainRotorHpMax = weakspot.maxHealth;
+                    }
+                }
+            }
+        }
+
+        #endregion
 
         #region Util
 
