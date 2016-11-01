@@ -22,7 +22,7 @@ namespace Oxide.Plugins
 
     class HelicopterStatistics : RustPlugin
     {
-        private static float TIME_TO_HIDE_UI_AFTER_HELICOPTER_KILLED = 20f;
+        private static float TIME_TO_HIDE_UI_AFTER_HELICOPTER_KILLED = 30f;
 
         private BaseHelicopter helicopter;
         private HelicopterHpValues helicopterHpValues;
@@ -177,8 +177,8 @@ namespace Oxide.Plugins
         private void KillHelis()
         {
             int helicopterCount = 0;
-            BaseHelicopter[] hellicopterList = UnityEngine.Object.FindObjectsOfType<BaseHelicopter>();
-            foreach (BaseHelicopter helicopter in hellicopterList)
+            BaseHelicopter[] helicopterList = UnityEngine.Object.FindObjectsOfType<BaseHelicopter>();
+            foreach (BaseHelicopter helicopter in helicopterList)
             {
                 helicopter.maxCratesToSpawn = 0;
                 helicopterCount++;
@@ -200,8 +200,7 @@ namespace Oxide.Plugins
         [ConsoleCommand("qqq")]
         void TestConsoleCommand(ConsoleSystem.Arg arg)
         {
-            List<BasePlayer> players = BasePlayer.activePlayerList;
-            foreach (var player in players)
+            foreach (var player in BasePlayer.activePlayerList)
             {
                 if (player == null) continue;
                 mainUIPanel.Draw(player);
@@ -211,7 +210,13 @@ namespace Oxide.Plugins
         [ConsoleCommand("www")]
         void TestConsoleCommand2(ConsoleSystem.Arg arg)
         {
-            helicopterEventTimer.Destroy();
+            foreach (var player in BasePlayer.activePlayerList)
+            {
+                if (player == null) continue;
+                CuiHelper.DestroyUi(player, "hsUI.mainPanel");
+                CuiHelper.DestroyUi(player, "aaa");
+                //CuiHelper.AddUi(player, "[{\"components\":[{\"type\":\"UnityEngine.UI.Image\",\"color\":\"0 0 0 0.4\"},{\"type\":\"RectTransform\",\"anchormin\":\"0 0\",\"anchormax\":\"1 1\", \"CursorEnabled\":\"true\"}],\"name\":\"aaa\",\"parent\":\"Hud\"}]");
+            }
         }
 
         private UInt32 GetSecondsFromTimeStamp(UInt32 timeStamp)
@@ -394,368 +399,393 @@ namespace Oxide.Plugins
             float statsPanelWidth = 0.6f;
 
 
-            mainUIPanel = new UIPanel("hsUI.mainCanvas")
+            mainUIPanel = new UIPanel("hsUI.mainPanel")
             {
                 color = Color.clear,
-                size = new Vector2(1f, 1f),
+                size = new Vector2(0.2f, 0.22f),
+                anchorPoint = AnchorPoints.Top | AnchorPoints.Left,
+                offset = new Vector2(0.0045f, 0.01f),
                 children = new List<UIPanel>
                 {
-                    new UIPanel("hsUI.mainCanvas.mainPanel")
+                    new UIPanel("hsUI.mainPanel.eventStartedPanel")
                     {
-                        color = Color.clear,
-                        size = new Vector2(0.2f, 0.22f),
-                        anchorPoint = AnchorPoints.Top | AnchorPoints.Left,
-                        offset = new Vector2(0.0045f, 0.01f),
+                        color = hpBarForegroundColor,
+                        size = new Vector2(0.37f, 0.1f),
+                        anchorPoint = AnchorPoints.Bottom | AnchorPoints.Right,
+                        offset = new Vector2(0f, 0.0555f),
+                        active = false,
                         children = new List<UIPanel>
                         {
-                            new UIPanel("hsUI.mainCanvas.mainPanel.eventStartedPanel")
+                            new UIPanelText("hsUI.mainPanel.eventStartedPanel.label")
                             {
-                                color = hpBarForegroundColor,
-                                size = new Vector2(0.37f, 0.1f),
-                                anchorPoint = AnchorPoints.Bottom | AnchorPoints.Right,
-                                offset = new Vector2(0f, 0.0555f),
-                                active = false,
+                                text = "Timer Started!",
+                                align = TextAnchor.MiddleCenter,
+                                fontSize = 12
+                            }
+                        }
+                    },
+                    new UIPanel("hsUI.mainPanel.hpPanel")
+                    {
+                        color = panelBackgrounColor,
+                        size = new Vector2(statsPanelWidth, 0.6f),
+                        anchorPoint = AnchorPoints.Top | AnchorPoints.Left,
+                        children = new List<UIPanel>
+                        {
+                            new UIPanel("hsUI.mainPanel.hpPanel.padding")
+                            {
+                                color = Color.clear,
+                                size = new Vector2(0.9f, 0.8f),
+                                //offset = new Vector2(0.005f, 0.01f),
+                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Center,
                                 children = new List<UIPanel>
                                 {
-                                    new UIPanelText("hsUI.mainCanvas.mainPanel.eventStartedPanel.label")
-                                    {
-                                        text = "Timer Started!",
-                                        align = TextAnchor.MiddleCenter,
-                                        fontSize = 12
-                                    }
-                                }
-                            },
-                            new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel")
-                            {
-                                color = panelBackgrounColor,
-                                size = new Vector2(statsPanelWidth, 0.6f),
-                                anchorPoint = AnchorPoints.Top | AnchorPoints.Left,
-                                children = new List<UIPanel>
-                                {
-                                    new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding")
+                                    new UIPanel("hsUI.mainPanel.hpPanel.padding.hpHelicopterContainer")
                                     {
                                         color = Color.clear,
-                                        size = new Vector2(0.9f, 0.8f),
+                                        size = new Vector2(1f, 0.3f),
                                         //offset = new Vector2(0.005f, 0.01f),
-                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Center,
+                                        anchorPoint = AnchorPoints.Top | AnchorPoints.Center,
                                         children = new List<UIPanel>
                                         {
-                                            new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpHelicopterContainer")
+                                            new UIPanel("hsUI.mainPanel.hpPanel.padding.hpHelicopterContainer.iconContainer")
                                             {
-                                                color = Color.clear,
-                                                size = new Vector2(1f, 0.3f),
+                                                color = new Color(0f, 0f, 0f, 0.25f),
+                                                size = new Vector2(0.18f, 1f),
                                                 //offset = new Vector2(0.005f, 0.01f),
-                                                anchorPoint = AnchorPoints.Top | AnchorPoints.Center,
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
                                                 children = new List<UIPanel>
                                                 {
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpHelicopterContainer.icon")
+                                                    new UIPanelRawImage("hsUI.mainPanel.hpPanel.padding.hpHelicopterContainer.iconContainer.icon")
                                                     {
-                                                        color = new Color(1f, 1f, 1f, 0.35f),
-                                                        size = new Vector2(0.18f, 1f),
+                                                        color = new Color(1f, 1f, 1f, 1f),
+                                                        size = Vector2.one * 0.8f,
+                                                        url = "http://i.imgur.com/mGddGSk.png",
                                                         //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Center,
                                                         children = new List<UIPanel>
                                                         {
-                                                        }
-                                                    },
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpHelicopterContainer.hpBackground")
-                                                    {
-                                                        color = hpBarBackgrounColor,
-                                                        size = new Vector2(0.8f, 1f),
-                                                        //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Right,
-                                                        children = new List<UIPanel>
-                                                        {
-                                                            new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpHelicopterContainer.hpForeground")
-                                                            {
-                                                                color = hpBarForegroundColor,
-                                                                size = new Vector2(0.75f, hpBarForegroundHeight),
-                                                                //offset = new Vector2(0.005f, 0.01f),
-                                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                                children = new List<UIPanel>
-                                                                {
-                                                                }
-                                                            },
-                                                            new UIPanelText("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpHelicopterContainer.label")
-                                                            {
-                                                                size = new Vector2(1f, 1f),
-                                                                offset = new Vector2(0.05f, -0.05f),
-                                                                //anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                                text = "10000",
-                                                                align = TextAnchor.MiddleLeft
-                                                            }
                                                         }
                                                     }
                                                 }
                                             },
-                                            new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpMainRotorContainer")
+                                            new UIPanel("hsUI.mainPanel.hpPanel.padding.hpHelicopterContainer.hpBackground")
                                             {
-                                                color = Color.clear,
-                                                size = new Vector2(1f, 0.3f),
+                                                color = hpBarBackgrounColor,
+                                                size = new Vector2(0.8f, 1f),
                                                 //offset = new Vector2(0.005f, 0.01f),
-                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Center,
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Right,
                                                 children = new List<UIPanel>
                                                 {
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpMainRotorContainer.icon")
+                                                    new UIPanel("hsUI.mainPanel.hpPanel.padding.hpHelicopterContainer.hpForeground")
                                                     {
-                                                        color = new Color(1f, 1f, 1f, 0.35f),
-                                                        size = new Vector2(0.18f, 1f),
+                                                        color = hpBarForegroundColor,
+                                                        size = new Vector2(0.75f, hpBarForegroundHeight),
                                                         //offset = new Vector2(0.005f, 0.01f),
                                                         anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
                                                         children = new List<UIPanel>
                                                         {
                                                         }
                                                     },
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpMainRotorContainer.hpBackground")
+                                                    new UIPanelText("hsUI.mainPanel.hpPanel.padding.hpHelicopterContainer.label")
                                                     {
-                                                        color = hpBarBackgrounColor,
-                                                        size = new Vector2(0.8f, 1f),
-                                                        //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Right,
-                                                        children = new List<UIPanel>
-                                                        {
-                                                            new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpMainRotorContainer.hpForeground")
-                                                            {
-                                                                color = hpBarForegroundColor,
-                                                                size = new Vector2(0.75f, hpBarForegroundHeight),
-                                                                //offset = new Vector2(0.005f, 0.01f),
-                                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                                children = new List<UIPanel>
-                                                                {
-                                                                }
-                                                            },
-                                                            new UIPanelText("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpMainRotorContainer.label")
-                                                            {
-                                                                size = new Vector2(1f, 1f),
-                                                                offset = new Vector2(0.05f, -0.05f),
-                                                                //anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                                text = "value",
-                                                                align = TextAnchor.MiddleLeft
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            },new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpTailRotorContainer")
-                                            {
-                                                color = Color.clear,
-                                                size = new Vector2(1f, 0.3f),
-                                                //offset = new Vector2(0.005f, 0.01f),
-                                                anchorPoint = AnchorPoints.Bottom | AnchorPoints.Center,
-                                                children = new List<UIPanel>
-                                                {
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpTailRotorContainer.icon")
-                                                    {
-                                                        color = new Color(1f, 1f, 1f, 0.35f),
-                                                        size = new Vector2(0.18f, 1f),
-                                                        //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                        children = new List<UIPanel>
-                                                        {
-                                                        }
-                                                    },
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpTailRotorContainer.hpBackground")
-                                                    {
-                                                        color = hpBarBackgrounColor,
-                                                        size = new Vector2(0.8f, 1f),
-                                                        //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Right,
-                                                        children = new List<UIPanel>
-                                                        {
-                                                            new UIPanel("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpTailRotorContainer.hpForeground")
-                                                            {
-                                                                color = hpBarForegroundColor,
-                                                                size = new Vector2(0.75f, hpBarForegroundHeight),
-                                                                //offset = new Vector2(0.005f, 0.01f),
-                                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                                children = new List<UIPanel>
-                                                                {
-                                                                }
-                                                            },
-                                                            new UIPanelText("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpTailRotorContainer.label")
-                                                            {
-                                                                size = new Vector2(1f, 1f),
-                                                                offset = new Vector2(0.05f, -0.05f),
-                                                                //anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                                text = "value",
-                                                                align = TextAnchor.MiddleLeft
-                                                            }
-                                                        }
+                                                        size = new Vector2(1f, 1f),
+                                                        offset = new Vector2(0.05f, -0.05f),
+                                                        //anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                        text = "10000",
+                                                        align = TextAnchor.MiddleLeft
                                                     }
                                                 }
                                             }
                                         }
                                     },
-                                }
-                            },
-                            new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel")
-                            {
-                                color = panelBackgrounColor,
-                                size = new Vector2(statsPanelWidth, 0.355f),
-                                //offset = new Vector2(0.005f, 0.01f),
-                                anchorPoint = AnchorPoints.Bottom | AnchorPoints.Left,
-                                children = new List<UIPanel>
-                                {
-                                    new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding")
+                                    new UIPanel("hsUI.mainPanel.hpPanel.padding.hpMainRotorContainer")
                                     {
                                         color = Color.clear,
-                                        size = new Vector2(0.9f, 0.8f),
+                                        size = new Vector2(1f, 0.3f),
                                         //offset = new Vector2(0.005f, 0.01f),
                                         anchorPoint = AnchorPoints.Middle | AnchorPoints.Center,
-                                        children =
+                                        children = new List<UIPanel>
                                         {
-                                            new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.rifleBulletsPanel")
+                                            new UIPanel("hsUI.mainPanel.hpPanel.padding.hpMainRotorContainer.iconContainer")
                                             {
-                                                color = Color.clear,
-                                                size = new Vector2(0.483f, 0.46f),
+                                                color = new Color(0f, 0f, 0f, 0.25f),
+                                                size = new Vector2(0.18f, 1f),
                                                 //offset = new Vector2(0.005f, 0.01f),
-                                                anchorPoint = AnchorPoints.Top | AnchorPoints.Left,
-                                                children =
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                children = new List<UIPanel>
                                                 {
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.rifleBulletsPanel.icon")
+                                                    new UIPanelRawImage("hsUI.mainPanel.hpPanel.padding.hpMainRotorContainer.iconContainer.icon")
                                                     {
-                                                        color = new Color(1f, 1f, 1f, 0.35f),
-                                                        size = new Vector2(0.38f, 1f),
+                                                        color = new Color(1f, 1f, 1f, 1f),
+                                                        size = Vector2.one * 0.8f,
+                                                        url = "http://i.imgur.com/IDSWMs9.png",
                                                         //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                        children =
+                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Center,
+                                                        children = new List<UIPanel>
                                                         {
-
-                                                        }
-                                                    },
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.rifleBulletsPanel.labelBackground")
-                                                    {
-                                                        color = hpBarBackgrounColor,
-                                                        size = new Vector2(0.58f, 1f),
-                                                        //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
-                                                        children =
-                                                        {
-                                                            new UIPanelText("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.rifleBulletsPanel.labelBackground.label")
-                                                            {
-                                                                size = new Vector2(1f, 1f),
-                                                                //offset = new Vector2(0.005f, 0.01f),
-                                                                //anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
-                                                                text = "0",
-                                                                align = TextAnchor.MiddleCenter
-                                                            }
                                                         }
                                                     }
                                                 }
                                             },
-                                            new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.pistolBulletsPanel")
+                                            new UIPanel("hsUI.mainPanel.hpPanel.padding.hpMainRotorContainer.hpBackground")
                                             {
-                                                color = Color.clear,
-                                                size = new Vector2(0.483f, 0.46f),
+                                                color = hpBarBackgrounColor,
+                                                size = new Vector2(0.8f, 1f),
+                                                //offset = new Vector2(0.005f, 0.01f),
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Right,
+                                                children = new List<UIPanel>
+                                                {
+                                                    new UIPanel("hsUI.mainPanel.hpPanel.padding.hpMainRotorContainer.hpForeground")
+                                                    {
+                                                        color = hpBarForegroundColor,
+                                                        size = new Vector2(0.75f, hpBarForegroundHeight),
+                                                        //offset = new Vector2(0.005f, 0.01f),
+                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                        children = new List<UIPanel>
+                                                        {
+                                                        }
+                                                    },
+                                                    new UIPanelText("hsUI.mainPanel.hpPanel.padding.hpMainRotorContainer.label")
+                                                    {
+                                                        size = new Vector2(1f, 1f),
+                                                        offset = new Vector2(0.05f, -0.05f),
+                                                        //anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                        text = "value",
+                                                        align = TextAnchor.MiddleLeft
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },new UIPanel("hsUI.mainPanel.hpPanel.padding.hpTailRotorContainer")
+                                    {
+                                        color = Color.clear,
+                                        size = new Vector2(1f, 0.3f),
+                                        //offset = new Vector2(0.005f, 0.01f),
+                                        anchorPoint = AnchorPoints.Bottom | AnchorPoints.Center,
+                                        children = new List<UIPanel>
+                                        {
+                                            new UIPanel("hsUI.mainPanel.hpPanel.padding.hpTailRotorContainer.iconContainer")
+                                            {
+                                                color = new Color(0f, 0f, 0f, 0.25f),
+                                                size = new Vector2(0.18f, 1f),
+                                                //offset = new Vector2(0.005f, 0.01f),
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                children = new List<UIPanel>
+                                                {
+                                                    new UIPanelRawImage("hsUI.mainPanel.hpPanel.padding.hpTailRotorContainer.iconContainer.icon")
+                                                    {
+                                                        color = new Color(1f, 1f, 1f, 1f),
+                                                        size = Vector2.one * 0.8f,
+                                                        url = "http://i.imgur.com/HBuOVgL.png",
+                                                        //offset = new Vector2(0.005f, 0.01f),
+                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Center,
+                                                        children = new List<UIPanel>
+                                                        {
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            new UIPanel("hsUI.mainPanel.hpPanel.padding.hpTailRotorContainer.hpBackground")
+                                            {
+                                                color = hpBarBackgrounColor,
+                                                size = new Vector2(0.8f, 1f),
+                                                //offset = new Vector2(0.005f, 0.01f),
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Right,
+                                                children = new List<UIPanel>
+                                                {
+                                                    new UIPanel("hsUI.mainPanel.hpPanel.padding.hpTailRotorContainer.hpForeground")
+                                                    {
+                                                        color = hpBarForegroundColor,
+                                                        size = new Vector2(0.75f, hpBarForegroundHeight),
+                                                        //offset = new Vector2(0.005f, 0.01f),
+                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                        children = new List<UIPanel>
+                                                        {
+                                                        }
+                                                    },
+                                                    new UIPanelText("hsUI.mainPanel.hpPanel.padding.hpTailRotorContainer.label")
+                                                    {
+                                                        size = new Vector2(1f, 1f),
+                                                        offset = new Vector2(0.05f, -0.05f),
+                                                        //anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                        text = "value",
+                                                        align = TextAnchor.MiddleLeft
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                        }
+                    },
+                    new UIPanel("hsUI.mainPanel.playerStatsPanel")
+                    {
+                        color = panelBackgrounColor,
+                        size = new Vector2(statsPanelWidth, 0.355f),
+                        //offset = new Vector2(0.005f, 0.01f),
+                        anchorPoint = AnchorPoints.Bottom | AnchorPoints.Left,
+                        children = new List<UIPanel>
+                        {
+                            new UIPanel("hsUI.mainPanel.playerStatsPanel.padding")
+                            {
+                                color = Color.clear,
+                                size = new Vector2(0.9f, 0.8f),
+                                //offset = new Vector2(0.005f, 0.01f),
+                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Center,
+                                children =
+                                {
+                                    new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.rifleBulletsPanel")
+                                    {
+                                        color = Color.clear,
+                                        size = new Vector2(0.483f, 0.46f),
+                                        //offset = new Vector2(0.005f, 0.01f),
+                                        anchorPoint = AnchorPoints.Top | AnchorPoints.Left,
+                                        children =
+                                        {
+                                            new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.rifleBulletsPanel.icon")
+                                            {
+                                                color = new Color(1f, 1f, 1f, 0.35f),
+                                                size = new Vector2(0.38f, 1f),
+                                                //offset = new Vector2(0.005f, 0.01f),
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                children =
+                                                {
+
+                                                }
+                                            },
+                                            new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.rifleBulletsPanel.labelBackground")
+                                            {
+                                                color = hpBarBackgrounColor,
+                                                size = new Vector2(0.58f, 1f),
                                                 //offset = new Vector2(0.005f, 0.01f),
                                                 anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
                                                 children =
                                                 {
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.pistolBulletsPanel.icon")
+                                                    new UIPanelText("hsUI.mainPanel.playerStatsPanel.padding.rifleBulletsPanel.labelBackground.label")
                                                     {
-                                                        color = new Color(1f, 1f, 1f, 0.35f),
-                                                        size = new Vector2(0.38f, 1f),
+                                                        size = new Vector2(1f, 1f),
                                                         //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                        children =
-                                                        {
-
-                                                        }
-                                                    },
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.pistolBulletsPanel.labelBackground")
-                                                    {
-                                                        color = hpBarBackgrounColor,
-                                                        size = new Vector2(0.58f, 1f),
-                                                        //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
-                                                        children =
-                                                        {
-                                                            new UIPanelText("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.pistolBulletsPanel.labelBackground.label")
-                                                            {
-                                                                size = new Vector2(1f, 1f),
-                                                                //offset = new Vector2(0.005f, 0.01f),
-                                                                //anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
-                                                                text = "0",
-                                                                align = TextAnchor.MiddleCenter
-                                                            }
-                                                        }
+                                                        //anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
+                                                        text = "0",
+                                                        align = TextAnchor.MiddleCenter
                                                     }
                                                 }
-                                            },
-                                            new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.medsPanel")
+                                            }
+                                        }
+                                    },
+                                    new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.pistolBulletsPanel")
+                                    {
+                                        color = Color.clear,
+                                        size = new Vector2(0.483f, 0.46f),
+                                        //offset = new Vector2(0.005f, 0.01f),
+                                        anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
+                                        children =
+                                        {
+                                            new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.pistolBulletsPanel.icon")
                                             {
-                                                color = Color.clear,
-                                                size = new Vector2(0.483f, 0.46f),
+                                                color = new Color(1f, 1f, 1f, 0.35f),
+                                                size = new Vector2(0.38f, 1f),
                                                 //offset = new Vector2(0.005f, 0.01f),
-                                                anchorPoint = AnchorPoints.Bottom | AnchorPoints.Left,
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
                                                 children =
                                                 {
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.medsPanel.icon")
-                                                    {
-                                                        color = new Color(1f, 1f, 1f, 0.35f),
-                                                        size = new Vector2(0.38f, 1f),
-                                                        //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                        children =
-                                                        {
 
-                                                        }
-                                                    },
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.medsPanel.labelBackground")
-                                                    {
-                                                        color = hpBarBackgrounColor,
-                                                        size = new Vector2(0.58f, 1f),
-                                                        //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
-                                                        children =
-                                                        {
-                                                            new UIPanelText("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.medsPanel.labelBackground.label")
-                                                            {
-                                                                size = new Vector2(1f, 1f),
-                                                                //offset = new Vector2(0.005f, 0.01f),
-                                                                //anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
-                                                                text = "0",
-                                                                align = TextAnchor.MiddleCenter
-                                                            }
-                                                        }
-                                                    }
                                                 }
                                             },
-                                            new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.timePanel")
+                                            new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.pistolBulletsPanel.labelBackground")
                                             {
-                                                color = Color.clear,
-                                                size = new Vector2(0.483f, 0.46f),
+                                                color = hpBarBackgrounColor,
+                                                size = new Vector2(0.58f, 1f),
                                                 //offset = new Vector2(0.005f, 0.01f),
-                                                anchorPoint = AnchorPoints.Bottom | AnchorPoints.Right,
+                                                anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
                                                 children =
                                                 {
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.timePanel.icon")
+                                                    new UIPanelText("hsUI.mainPanel.playerStatsPanel.padding.pistolBulletsPanel.labelBackground.label")
                                                     {
-                                                        color = new Color(1f, 1f, 1f, 0.35f),
-                                                        size = new Vector2(0.38f, 1f),
+                                                        size = new Vector2(1f, 1f),
                                                         //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
-                                                        children =
-                                                        {
+                                                        //anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
+                                                        text = "0",
+                                                        align = TextAnchor.MiddleCenter
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.medsPanel")
+                                    {
+                                        color = Color.clear,
+                                        size = new Vector2(0.483f, 0.46f),
+                                        //offset = new Vector2(0.005f, 0.01f),
+                                        anchorPoint = AnchorPoints.Bottom | AnchorPoints.Left,
+                                        children =
+                                        {
+                                            new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.medsPanel.icon")
+                                            {
+                                                color = new Color(1f, 1f, 1f, 0.35f),
+                                                size = new Vector2(0.38f, 1f),
+                                                //offset = new Vector2(0.005f, 0.01f),
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                children =
+                                                {
 
-                                                        }
-                                                    },
-                                                    new UIPanel("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.timePanel.labelBackground")
+                                                }
+                                            },
+                                            new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.medsPanel.labelBackground")
+                                            {
+                                                color = hpBarBackgrounColor,
+                                                size = new Vector2(0.58f, 1f),
+                                                //offset = new Vector2(0.005f, 0.01f),
+                                                anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
+                                                children =
+                                                {
+                                                    new UIPanelText("hsUI.mainPanel.playerStatsPanel.padding.medsPanel.labelBackground.label")
                                                     {
-                                                        color = hpBarBackgrounColor,
-                                                        size = new Vector2(0.58f, 1f),
+                                                        size = new Vector2(1f, 1f),
                                                         //offset = new Vector2(0.005f, 0.01f),
-                                                        anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
-                                                        children =
-                                                        {
-                                                            new UIPanelText("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.timePanel.labelBackground.label")
-                                                            {
-                                                                size = new Vector2(1f, 1f),
-                                                                //offset = new Vector2(0.005f, 0.01f),
-                                                                //anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
-                                                                text = "00:00",
-                                                                align = TextAnchor.MiddleCenter
-                                                            }
-                                                        }
+                                                        //anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
+                                                        text = "0",
+                                                        align = TextAnchor.MiddleCenter
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.timePanel")
+                                    {
+                                        color = Color.clear,
+                                        size = new Vector2(0.483f, 0.46f),
+                                        //offset = new Vector2(0.005f, 0.01f),
+                                        anchorPoint = AnchorPoints.Bottom | AnchorPoints.Right,
+                                        children =
+                                        {
+                                            new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.timePanel.icon")
+                                            {
+                                                color = new Color(1f, 1f, 1f, 0.35f),
+                                                size = new Vector2(0.38f, 1f),
+                                                //offset = new Vector2(0.005f, 0.01f),
+                                                anchorPoint = AnchorPoints.Middle | AnchorPoints.Left,
+                                                children =
+                                                {
+
+                                                }
+                                            },
+                                            new UIPanel("hsUI.mainPanel.playerStatsPanel.padding.timePanel.labelBackground")
+                                            {
+                                                color = hpBarBackgrounColor,
+                                                size = new Vector2(0.58f, 1f),
+                                                //offset = new Vector2(0.005f, 0.01f),
+                                                anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
+                                                children =
+                                                {
+                                                    new UIPanelText("hsUI.mainPanel.playerStatsPanel.padding.timePanel.labelBackground.label")
+                                                    {
+                                                        size = new Vector2(1f, 1f),
+                                                        //offset = new Vector2(0.005f, 0.01f),
+                                                        //anchorPoint = AnchorPoints.Top | AnchorPoints.Right,
+                                                        text = "00:00",
+                                                        align = TextAnchor.MiddleCenter
                                                     }
                                                 }
                                             }
@@ -768,19 +798,19 @@ namespace Oxide.Plugins
                 }
             };
 
-            hpBarHelicopter = mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpHelicopterContainer.hpForeground");
-            hpBarMainRotor = mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpMainRotorContainer.hpForeground");
-            hpBarTailRotor = mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpTailRotorContainer.hpForeground");
-            hpBarHelicopterLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpHelicopterContainer.label");
-            hpBarMainRotorLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpMainRotorContainer.label");
-            hpBarTailRotorLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.hpPanel.padding.hpTailRotorContainer.label");
+            hpBarHelicopter = mainUIPanel.GetUiPanelByName("hsUI.mainPanel.hpPanel.padding.hpHelicopterContainer.hpForeground");
+            hpBarMainRotor = mainUIPanel.GetUiPanelByName("hsUI.mainPanel.hpPanel.padding.hpMainRotorContainer.hpForeground");
+            hpBarTailRotor = mainUIPanel.GetUiPanelByName("hsUI.mainPanel.hpPanel.padding.hpTailRotorContainer.hpForeground");
+            hpBarHelicopterLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainPanel.hpPanel.padding.hpHelicopterContainer.label");
+            hpBarMainRotorLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainPanel.hpPanel.padding.hpMainRotorContainer.label");
+            hpBarTailRotorLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainPanel.hpPanel.padding.hpTailRotorContainer.label");
 
-            rifleBulletsLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.rifleBulletsPanel.labelBackground.label");
-            pistolBulletsLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.pistolBulletsPanel.labelBackground.label");
-            medsLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.medsPanel.labelBackground.label");
-            timeLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.playerStatsPanel.padding.timePanel.labelBackground.label");
+            rifleBulletsLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainPanel.playerStatsPanel.padding.rifleBulletsPanel.labelBackground.label");
+            pistolBulletsLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainPanel.playerStatsPanel.padding.pistolBulletsPanel.labelBackground.label");
+            medsLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainPanel.playerStatsPanel.padding.medsPanel.labelBackground.label");
+            timeLabel = (UIPanelText)mainUIPanel.GetUiPanelByName("hsUI.mainPanel.playerStatsPanel.padding.timePanel.labelBackground.label");
 
-            timerStartedPanel = mainUIPanel.GetUiPanelByName("hsUI.mainCanvas.mainPanel.eventStartedPanel");
+            timerStartedPanel = mainUIPanel.GetUiPanelByName("hsUI.mainPanel.eventStartedPanel");
         }
 
         #endregion
